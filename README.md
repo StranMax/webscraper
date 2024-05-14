@@ -3,3 +3,15 @@
 Command line tools for collecting data from web-services
 
 Currently contains tool for harvesting data from Finnish Kansalliskirjasto OAI-PMH service.
+
+## Installation
+
+```
+pip install git+https://github.com/StranMax/webscraper.git@master
+```
+
+## Usage
+
+```
+oai_harvest.exe --help
+```
