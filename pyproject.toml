@@ -16,7 +16,7 @@ dependencies = [
 ]
 
 [project.scripts]
-oai-harvest = "webscraper.oai-harvester:main"
+oai-harvest = "webscraper.oai_harvester:main"
 
 [project.urls]
 Homepage = "https://github.com/StranMax/webscraper"
