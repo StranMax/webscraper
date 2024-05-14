@@ -244,7 +244,7 @@ class Downloader():
         logging.info('Currently %s attempted downloads and %s succesfully downloaded', self._download_attempt, self._download_success)
         
 
-def main(args):
+def main(cli_args()):
     """ Main entry point of the app """
     
     # Command line arguments
@@ -293,8 +293,7 @@ def main(args):
                         downloader._download_attempt-downloader._download_success)
         
     
-if __name__ == "__main__":
-    """ This is executed when run from the command line """
+def cli_args():
     parser = argparse.ArgumentParser(description=__doc__)
 
     parser.add_argument("URL", 
@@ -343,5 +342,6 @@ if __name__ == "__main__":
         action="version",
         version="%(prog)s (version {version})".format(version=__version__))
 
-    args = parser.parse_args()
-    main(args)
+    return parser.parse_args()
+    
+    #main(args)
