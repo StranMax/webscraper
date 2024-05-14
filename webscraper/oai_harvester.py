@@ -29,12 +29,6 @@ from urllib.parse import urlparse, unquote, quote
 from sickle import Sickle
 from sickle.iterator import OAIResponseIterator
 
-logging.basicConfig(
-    format='[%(asctime)s] - [%(levelname)s] - %(message)s', 
-    level=logging.INFO, 
-    datefmt='%d-%b-%y %H:%M:%S'
-    )
-
 
 class KansallisarkistoOAI():
     # All the sets are here: https://julkaisut.valtioneuvosto.fi/oai/request?verb=ListSets
@@ -130,7 +124,7 @@ class Record():
         #logging.info("Checking record: %s", self.title)
         if self._check_language(language) and self._match(pattern):
             Record.counter += 1
-            logging.info("Found record no. %s: %s", Record.idx, self.title)
+            logging.info("Record no. %s: %s", Record.idx, self.title)
             return True
         else:
             logging.debug("Skip record no. %s: %s", Record.idx, self.title)
@@ -208,8 +202,8 @@ class Downloader():
         self._urls.append(value)
         self._download_attempt += 1
         logging.debug("Downloader has %s urls", len(self._urls))
-        if len(self._urls) == 100:
-            logging.info("Stored urls reached 100")
+        if len(self._urls) == 1000:
+            logging.info("Stored urls reached %s", len(self._urls))
             self.threaded_download()
             del self.url
             
@@ -224,7 +218,7 @@ class Downloader():
         except UnicodeError:
             logging.warning("Problem with url: %s", url)
             resolved_url = urllib.request.urlopen(url).geturl()
-            logging.info('Trying fixed url: %s', resolved_url)
+            logging.warning('Trying fixed url: %s', resolved_url)
             response = requests.get(resolved_url, allow_redirects=True)
         if "content-disposition" in response.headers:
             content_disposition = response.headers["content-disposition"]
@@ -234,21 +228,22 @@ class Downloader():
         with open(self._outdir / Path(filename), mode="wb") as file:
             file.write(response.content)
             self._download_success += 1
-            logging.info('Downloaded file %s', filename)
+            logging.info('Downloaded file: %s', filename)
         
     def threaded_download(self):
-        logging.info("Starting threaded download with %s files", len(self._urls))
+        logging.debug("Starting threaded download with %s files", len(self._urls))
         with ThreadPoolExecutor() as executor:
             executor.map(self.download_file, self._urls)
-        logging.info("Finished threaded download")
-        logging.info('Currently %s attempted downloads and %s succesfully downloaded', self._download_attempt, self._download_success)
+        logging.debug("Finished threaded download")
+        logging.debug('Currently %s attempted downloads and %s succesfully downloaded', self._download_attempt, self._download_success)
     
 def cli_args():
     parser = argparse.ArgumentParser(description=__doc__)
 
     parser.add_argument("URL", 
-                        metavar="<string>",
-                        help="OAI-PMH service, for example: 'https://julkaisut.valtioneuvosto.fi/oai/request'", 
+                        metavar="<oai-pmh-service-url>",
+                        help=("OAI-PMH service, for example: "
+                        'https://julkaisut.valtioneuvosto.fi/oai/request'), 
                         type=str)
 
     parser.add_argument("-lim", "--limit", 
@@ -307,6 +302,21 @@ def main():
     OUTDIR = args.outdir
     VERBOSE = args.verbose
     
+    match VERBOSE:
+        case 0: 
+            loglevel = logging.ERROR
+        case 1:
+            loglevel = logging.WARNING
+        case 2:
+            loglevel = logging.INFO
+        case 3: 
+            loglevel = logging.DEBUG
+    
+    logging.basicConfig(
+    format='[%(asctime)s] - [%(levelname)s] - %(message)s', 
+    level=loglevel, 
+    datefmt='%d-%b-%y %H:%M:%S'
+    )
     
     if LISTPUBLISHERS:
         pprint.pp(list(SETS.keys()))
@@ -316,7 +326,7 @@ def main():
     
     downloader = Downloader(OUTDIR)
     
-    logging.info("Start looping over records")
+    logging.debug("Start looping over records")
     for record in records:
         
         if record.counter == LIMIT:
@@ -332,7 +342,7 @@ def main():
                 downloader.url = i
         
     if not downloader.url:
-        logging.info("No downloads")
+        logging.debug("No downloads")
     else:
         downloader.threaded_download()
         

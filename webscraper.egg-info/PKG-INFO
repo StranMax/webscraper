@@ -1,0 +1,11 @@
+Metadata-Version: 2.1
+Name: webscraper
+Version: 0.0.1
+Summary: Collect data from web-services
+Author-email: Max Strandén <max.stranden@gmail.com>
+Project-URL: Homepage, https://github.com/StranMax/webscraper
+Project-URL: Documentation, https://github.com/StranMax/webscraper
+Requires-Python: >=3.12
+License-File: LICENCE
+Requires-Dist: requests
+Requires-Dist: sickle
