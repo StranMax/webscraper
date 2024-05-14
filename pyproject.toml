@@ -10,10 +10,14 @@ authors = [
 description = "Collect data from web-services"
 version = "0.0.1"
 requires-python = ">=3.12"
-licence = {file = "LICENCE"}
 dependencies = [
 	"requests",
 	"sickle",
 ]
 
 [project.scripts]
+oai-harvest = "webscraper.oai-harvester:main"
+
+[project.urls]
+Homepage = "https://github.com/StranMax/webscraper"
+Documentation = "https://github.com/StranMax/webscraper"
