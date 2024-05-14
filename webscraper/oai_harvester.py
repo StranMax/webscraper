@@ -242,56 +242,6 @@ class Downloader():
             executor.map(self.download_file, self._urls)
         logging.info("Finished threaded download")
         logging.info('Currently %s attempted downloads and %s succesfully downloaded', self._download_attempt, self._download_success)
-        
-
-def main(cli_args()):
-    """ Main entry point of the app """
-    
-    # Command line arguments
-    LISTPUBLISHERS = args.listpublishers
-    URL = args.URL
-    PUBLISHERS = args.publishers
-    LIMIT = args.limit
-    SEARCHPATTERN = args.searchpattern
-    LANGUAGE = args.language
-    OUTDIR = args.outdir
-    VERBOSE = args.verbose
-    
-    
-    if LISTPUBLISHERS:
-        pprint.pp(list(SETS.keys()))
-        exit()
-
-    records = Records(URL, PUBLISHERS)
-    
-    downloader = Downloader(OUTDIR)
-    
-    logging.info("Start looping over records")
-    for record in records:
-        
-        if record.counter == LIMIT:
-            break
-        
-        if not record.filter(LANGUAGE, SEARCHPATTERN):
-            continue  # Skip record and continue to next loop
-
-        if not OUTDIR:
-            pass
-        else:
-            for i in record.urls:
-                downloader.url = i
-        
-    if not downloader.url:
-        logging.info("No downloads")
-    else:
-        downloader.threaded_download()
-        
-    logging.info("Finished queries. Total of %s queries, found %s matching records and downloaded %s files", 
-                 records.idx, Record.counter, downloader._download_success)
-    if downloader._download_success < downloader._download_attempt:
-        logging.warning('Download of %s files failed', 
-                        downloader._download_attempt-downloader._download_success)
-        
     
 def cli_args():
     parser = argparse.ArgumentParser(description=__doc__)
@@ -344,4 +294,50 @@ def cli_args():
 
     return parser.parse_args()
     
-    #main(args)
+def main():
+    """ Main entry point of the app """
+    args = cli_args()
+    # Command line arguments
+    LISTPUBLISHERS = args.listpublishers
+    URL = args.URL
+    PUBLISHERS = args.publishers
+    LIMIT = args.limit
+    SEARCHPATTERN = args.searchpattern
+    LANGUAGE = args.language
+    OUTDIR = args.outdir
+    VERBOSE = args.verbose
+    
+    
+    if LISTPUBLISHERS:
+        pprint.pp(list(SETS.keys()))
+        exit()
+
+    records = Records(URL, PUBLISHERS)
+    
+    downloader = Downloader(OUTDIR)
+    
+    logging.info("Start looping over records")
+    for record in records:
+        
+        if record.counter == LIMIT:
+            break
+        
+        if not record.filter(LANGUAGE, SEARCHPATTERN):
+            continue  # Skip record and continue to next loop
+
+        if not OUTDIR:
+            pass
+        else:
+            for i in record.urls:
+                downloader.url = i
+        
+    if not downloader.url:
+        logging.info("No downloads")
+    else:
+        downloader.threaded_download()
+        
+    logging.info("Finished queries. Total of %s queries, found %s matching records and downloaded %s files", 
+                 records.idx, Record.counter, downloader._download_success)
+    if downloader._download_success < downloader._download_attempt:
+        logging.warning('Download of %s files failed', 
+                        downloader._download_attempt-downloader._download_success)
