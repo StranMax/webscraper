@@ -1,2 +1,0 @@
-[console_scripts]
-oai-harvest = webscraper.oai_harvester:main
