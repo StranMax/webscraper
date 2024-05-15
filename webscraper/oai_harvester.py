@@ -21,7 +21,7 @@ import requests
 import urllib
 
 from concurrent.futures import ThreadPoolExecutor
-from itertools import cycle
+from itertools import count #cycle
 from lxml import etree
 from pathlib import Path
 from urllib.parse import urlparse, unquote, quote
@@ -50,11 +50,52 @@ class KansallisarkistoOAI():
     }
     metadata = 'kk'
 
+class Records(KansallisarkistoOAI):
+    default_params = {'metadataPrefix': 'kk' , 
+                      'ignore_deleted': True}
+                      
+    # Initialize with all records
+    def __init__(self, endpoint, sets):
+        logging.info("Connected to: %s", endpoint)
+        self.oai_service = Sickle(endpoint)
+        #self.params = []
+        self.records = []
+        self.idx = 0
+        self.sets = sets
+        self.list_records()
+        
+    # Helper function for list_records
+    def _create_param_sets(self):
+        if self.sets is not None:           
+            return [{**Records.default_params, 'set': self.sets_lookup[set]} for set in self.sets]
+        else:
+            return [{**Records.default_params}]
+    
+    # Initializer for records
+    def list_records(self):
+        for param_set in self._create_param_sets():
+            self.records.append(self.oai_service.ListRecords(**param_set))
+    
+    # Custom iterator
+    def __iter__(self):
+        return self
+        
+    # Transform each item to Record class
+    def __next__(self):
+        for records in self.records:
+            record = records.next()
+            if record is not None:
+                self.idx += 1
+                return Record(record)
+            else:
+                raise StopIteration
+
+
 class Record():
-    counter = 0
-    idx = 0
+    _matches = count(0)
+    _counter = count(0)
     def __init__(self, response):
-        Record.idx += 1
+        self.counter = next(self._counter)
         self.title = None
         self.abstract = None
         self.publication = None
@@ -123,56 +164,15 @@ class Record():
     def filter(self, language, pattern):
         #logging.info("Checking record: %s", self.title)
         if self._check_language(language) and self._match(pattern):
-            Record.counter += 1
-            logging.info("Record no. %s: %s", Record.idx, self.title)
+            next(self._matches)
+            logging.info("Record no. %s: %s", self.counter, self.title)
             return True
         else:
-            logging.debug("Skip record no. %s: %s", Record.idx, self.title)
+            logging.debug("Skip record no. %s: %s", self.counter, self.title)
             return False
 
 
-class Records(KansallisarkistoOAI):
-    default_params = {'metadataPrefix': 'kk' , 
-                      'ignore_deleted': True}
-                      
-    # Initialize with all records
-    def __init__(self, endpoint, sets):
-        logging.info("Connected to: %s", endpoint)
-        self.oai_service = Sickle(endpoint)
-        #self.params = []
-        self.records = []
-        self.idx = 0
-        self.sets = sets
-        self.list_records()
-        
-    # Helper function for list_records
-    def _create_param_sets(self):
-        if self.sets is not None:           
-            return [{**Records.default_params, 'set': self.sets_lookup[set]} for set in self.sets]
-        else:
-            return [{**Records.default_params}]
-    
-    # Initializer for records
-    def list_records(self):
-        for param_set in self._create_param_sets():
-            self.records.append(self.oai_service.ListRecords(**param_set))
-    
-    # Custom iterator
-    def __iter__(self):
-        return self
-        
-    # Transform each item to Record class
-    def __next__(self):
-        for records in self.records:
-            record = records.next()
-            if record is not None:
-                self.idx += 1
-                return Record(record)
-            else:
-                raise StopIteration
-
 class Downloader():
-    #urls = []
     
     def __init__(self, outdir):
         self._outdir = outdir
@@ -313,10 +313,10 @@ def main():
             loglevel = logging.DEBUG
     
     logging.basicConfig(
-    format='[%(asctime)s] - [%(levelname)s] - %(message)s', 
-    level=loglevel, 
-    datefmt='%d-%b-%y %H:%M:%S'
-    )
+        format='[%(asctime)s] - [%(levelname)s] - %(message)s', 
+        level=loglevel, 
+        datefmt='%d-%b-%y %H:%M:%S'
+        )
     
     if LISTPUBLISHERS:
         pprint.pp(list(SETS.keys()))
@@ -327,6 +327,7 @@ def main():
     downloader = Downloader(OUTDIR)
     
     logging.debug("Start looping over records")
+    
     for record in records:
         
         if record.counter == LIMIT:
@@ -347,7 +348,7 @@ def main():
         downloader.threaded_download()
         
     logging.info("Finished queries. Total of %s queries, found %s matching records and downloaded %s files", 
-                 records.idx, Record.counter, downloader._download_success)
+                 record.counter, Record._matches, downloader._download_success)
     if downloader._download_success < downloader._download_attempt:
         logging.warning('Download of %s files failed', 
                         downloader._download_attempt-downloader._download_success)
