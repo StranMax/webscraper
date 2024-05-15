@@ -15,6 +15,9 @@ dependencies = [
 	"sickle",
 ]
 
+[project.optional-dependencies]
+dev = ["pytest"]
+
 [project.scripts]
 oai-harvest = "webscraper.oai_harvester:main"
 
