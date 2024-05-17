@@ -13,6 +13,7 @@ __version__ = "0.1.0"
 __license__ = "MIT"
 
 import argparse
+import csv
 import logging
 import xml.etree.ElementTree as ET
 import pprint
@@ -21,7 +22,7 @@ import requests
 import urllib
 
 from concurrent.futures import ThreadPoolExecutor
-from itertools import count #cycle
+from itertools import count
 from lxml import etree
 from pathlib import Path
 from urllib.parse import urlparse, unquote, quote
@@ -96,18 +97,24 @@ class Record():
     _counter = count(0)
     def __init__(self, response):
         self.counter = next(self._counter)
-        self.title = None
-        self.abstract = None
-        self.publication = None
-        self.publisher = None
-        self.key_words = []
-        self.language = None
-        self.published = None
-        self.urls = []
+        self.metadata = {}
+        
+        #self.title = None
+        #self.abstract = None
+        #self.publication = None
+        #self.publisher = None
+        #self.key_words = []
+        #self.language = None
+        #self.published = None
+        #self.urls = []
+        
         self.xml = response.xml
         self._parse_metadata()
         
     def _parse_metadata(self):
+        meta = {}
+        key_words = []
+        urls = []
         for field in self.xml.findall(".//{http://kk/1.0}field"):
             elem = field.get("element")
             qualif = field.get("qualifier")
@@ -115,36 +122,48 @@ class Record():
             
             match (elem, qualif):
                 case ("title", None):
-                    self.title = value
+                    #self.title = value
+                    meta["title"] = value
                 case ("description", "abstract"):
-                    self.abstract = value
+                    #self.abstract = value
+                    meta["abstract"] = value
                 case ("relation", "ispartofseries"):
-                    self.publication = value
+                    #self.publication = value
+                    meta["publication"] = value
                 case ("publisher", None):
-                    self.publisher = value
+                    #self.publisher = value
+                    meta["publisher"] = value
                 case ("subject", None):
-                    self.key_words.append(value)
+                    #self.key_words.append(value)
+                    key_words.append(value)
                 case ("language", "iso"):
-                    self.language = value
+                    #self.language = value
+                    meta["language"] = value
                 case ("date", "issued"):
-                    self.published = value
+                    #self.published = value
+                    meta["published"] = value
         
         for file in self.xml.findall(".//{http://kk/1.0}file"):
             type = file.get("type")
             href = file.get("href")
             if type=="application/pdf":
-                    self.urls.append(href)
+                    #self.urls.append(href)
+                    urls.append(href)
+        
+        self.metadata = {**meta, "key_words": key_words, "urls": urls}
+        logging.debug(self.metadata)
     
     def __repr__(self):
         return f'Record({response})'
     
     def __str__(self):
-        return f"{self.title} ({self.published}). {self.publication}, {self.publisher}"
+        #return f"{self.title} ({self.published}). {self.publication}, {self.publisher}"
+        return self.metadata
         
     def _match(self, pattern):    
-        entries = [i for i in [self.title, 
-                               self.abstract, 
-                               *self.key_words]
+        entries = [i for i in [self.metadata.get("title"), 
+                               self.metadata.get("abstract"), 
+                               *self.metadata.get("key_words")]
                    if i is not None
                   ]
         if not pattern:
@@ -158,17 +177,17 @@ class Record():
         if not language:
             return True
         else:
-            return self.language == language
+            return self.metadata.get("language") == language
             
         
     def filter(self, language, pattern):
         #logging.info("Checking record: %s", self.title)
         if self._check_language(language) and self._match(pattern):
             next(self._matches)
-            logging.info("Record no. %s: %s", self.counter, self.title)
+            logging.info("Record no. %s: %s", self.counter, self.metadata.get("title"))
             return True
         else:
-            logging.debug("Skip record no. %s: %s", self.counter, self.title)
+            logging.debug("Skip record no. %s: %s", self.counter, self.metadata.get("title"))
             return False
 
 
@@ -237,6 +256,47 @@ class Downloader():
         logging.debug("Finished threaded download")
         logging.debug('Currently %s attempted downloads and %s succesfully downloaded', self._download_attempt, self._download_success)
     
+class MetadataWriter():
+        def __init__(self, filepath):
+            self.filepath = filepath
+            self._metadata = []
+            
+        @property
+        def filepath(self):
+            return self._filepath
+            
+        @filepath.setter
+        def filepath(self, value):
+            if Path(value).exists():
+                logging.warning("Metadata file %s exists", value)
+            self._filepath = Path(value)
+                
+        @property
+        def metadata(self):
+            return self._metadata
+        
+        @metadata.setter
+        def metadata(self, value):
+            self._metadata.append(value)
+            
+        @metadata.deleter
+        def metadata(self):
+            logging.debug("Clearing metadata list length of %(len)s", len(self.metadata))
+            self._metadata.clear()
+            
+        def write_csv(self):
+            logging.info("Writing metadata to file: %s", str(self.filepath))
+            if self.filepath.exists():
+                logging.warning("Overwriting old metadata file")
+            with open(self.filepath, "w", newline="", encoding='utf-8') as f:
+                w = csv.DictWriter(f, fieldnames=self.metadata[0].keys(), 
+                                   delimiter=';')
+                w.writeheader()
+                w.writerows(self.metadata)
+            logging.info("Writing finished")
+            
+        
+    
 def cli_args():
     parser = argparse.ArgumentParser(description=__doc__)
 
@@ -270,8 +330,12 @@ def cli_args():
                         type=str, default=None)
                         
     parser.add_argument("-o", "--outdir",
-                        type=str,
-                        help="download files to location")
+                        type=str, metavar="<directory>",
+                        help="download files to a directory")
+                        
+    parser.add_argument("-m", "--metadata",
+                        type=str, metavar="<filepath>",
+                        help="save metadata to a file")
                         
     # Optional verbosity counter (eg. -v, -vv, -vvv, etc.)
     parser.add_argument(
@@ -300,6 +364,7 @@ def main():
     SEARCHPATTERN = args.searchpattern
     LANGUAGE = args.language
     OUTDIR = args.outdir
+    FILEPATH = args.metadata
     VERBOSE = args.verbose
     
     match VERBOSE:
@@ -326,6 +391,8 @@ def main():
     
     downloader = Downloader(OUTDIR)
     
+    metadatawriter = MetadataWriter(FILEPATH)
+    
     logging.debug("Start looping over records")
     
     for record in records:
@@ -339,13 +406,23 @@ def main():
         if not OUTDIR:
             pass
         else:
-            for i in record.urls:
+            for i in record.metadata["urls"]:
                 downloader.url = i
+        
+        if not FILEPATH:
+            pass
+        else:
+            metadatawriter.metadata = record.metadata
+            
         
     if not downloader.url:
         logging.debug("No downloads")
     else:
         downloader.threaded_download()
+        
+    if metadatawriter.metadata is not None:
+        metadatawriter.write_csv()
+        
         
     logging.info("Finished queries. Total of %s queries, found %s matching records and downloaded %s files", 
                  record.counter, Record._matches, downloader._download_success)

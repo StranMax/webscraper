@@ -5,14 +5,14 @@ from sickle import Sickle
 from webscraper.oai_harvester import Records, Record
 
 
-@pytest.fixture
+@pytest.fixture(scope="function")
 def kk_metadata():
     sickle = Sickle('https://julkaisut.valtioneuvosto.fi/oai/request')
     records = sickle.ListRecords(metadataPrefix='kk')
     return records
     
     
-@pytest.fixture
+@pytest.fixture(scope="function")
 def records_data():
     records = Records('https://julkaisut.valtioneuvosto.fi/oai/request', None)
     return records
@@ -25,8 +25,8 @@ def test_Records_next(kk_metadata, records_data):
     kk_metadata.next()  # First record
     kk_metadata.next()  # Second record
     
-    title_records_data = next(records_data).title  # Title from third record
-    title_kk_metadata = Record(kk_metadata.next()).title  # Title from third record
+    title_records_data = next(records_data).metadata["title"]  # Title from third record
+    title_kk_metadata = Record(kk_metadata.next()).metadata["title"]  # Title from third record
     
     assert title_records_data == title_kk_metadata
     
