@@ -258,7 +258,7 @@ class Downloader():
     
 class MetadataWriter():
         def __init__(self, filepath):
-            self.filepath = filepath
+            self._filepath = filepath
             self._metadata = []
             
         @property
@@ -267,9 +267,10 @@ class MetadataWriter():
             
         @filepath.setter
         def filepath(self, value):
-            if Path(value).exists():
-                logging.warning("Metadata file %s exists", value)
-            self._filepath = Path(value)
+            if value is not None:
+                if Path(value).exists():
+                    logging.warning("Metadata file %s exists", value)
+                self._filepath = Path(value)
                 
         @property
         def metadata(self):
@@ -285,15 +286,16 @@ class MetadataWriter():
             self._metadata.clear()
             
         def write_csv(self):
-            logging.info("Writing metadata to file: %s", str(self.filepath))
-            if self.filepath.exists():
-                logging.warning("Overwriting old metadata file")
-            with open(self.filepath, "w", newline="", encoding='utf-8') as f:
-                w = csv.DictWriter(f, fieldnames=self.metadata[0].keys(), 
-                                   delimiter=';')
-                w.writeheader()
-                w.writerows(self.metadata)
-            logging.info("Writing finished")
+            if self.filepath is not None:
+                logging.info("Writing metadata to file: %s", str(self._filepath))
+                if Path(self.filepath).exists():
+                    logging.warning("Overwriting old metadata file")
+                with open(self.filepath, "w", newline="", encoding='utf-8') as f:
+                    w = csv.DictWriter(f, fieldnames=self.metadata[0].keys(), 
+                                       delimiter=';')
+                    w.writeheader()
+                    w.writerows(self.metadata)
+                logging.info("Writing finished")
             
         
     

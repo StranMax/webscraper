@@ -18,8 +18,16 @@ Requisites: python>=3.12
 oai_harvest.exe --help
 ```
 
+## Example usage:
+
+Download all files and metadata of records containing `maaseutu` in abstract or keywords:  
+
+```
+oai-harvest https://julkaisut.valtioneuvosto.fi/oai/request -sp "[Mm]aa[-]?seu.*" -vv -o C:\Users\maxst\Desktop\MAAVALTA\documents -m C:\Users\maxst\Desktop\MAAVALTA\metadata.csv
+```
+
 ## TODO list:
 
-1. Save all metadata to a file.
-
 - What about records with multiple files?
+
+- Failure to download certain files, why?
