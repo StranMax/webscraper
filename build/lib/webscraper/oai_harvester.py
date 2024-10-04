@@ -268,10 +268,9 @@ class Downloader():
                         filename = content_disposition.split("filename=")[1]
                     else:
                         filename = url.split("/")[-1]
-                        
-                    filename_valid = "".join(x for x in filename if x.isalnum())
-                    filename_valid = filename_valid[:-3] + '.' + filename[-3:]
-                    logging.info(f'Converted {filename} to {filename_valid}')
+                        filename_valid = "".join(x for x in filename if x.isalnum())
+                        filename_valid = filename_valid[:-3] + '.' + filename[-3:]
+                        logging.info(f'Converted {filename} to {filename_valid}')
                         
                     out_file = self._outdir / Path(filename_valid)
                     if out_file.exists(): 
