@@ -26,6 +26,20 @@ Download metadata and filelist using search pattern for `maaseutu` in abstracts,
 oai-harvest https://julkaisut.valtioneuvosto.fi/oai/request -sp "[Mm]aa[-]?seu.*" -vv -m C:\Users\maxst\Desktop\MAAVALTA\metadata_maaseutu_07102024.csv -f C:\Users\maxst\Desktop\MAAVALTA\filelist_maaseutu_07102024.txt
 ```
 
+Same for `kaupunki` search pattern:  
+
+```
+oai-harvest https://julkaisut.valtioneuvosto.fi/oai/request -sp "[Kk]au[-]?pun.*" -vv -m C:\Users\maxst\Desktop\MAAVALTA\metadata_kaupunki_07102024.csv -f C:\Users\maxst\Desktop\MAAVALTA\filelist_kaupunki_07102024.txt
+```
+
+File list obtained by `-f` option can be used to download file with wget:  
+
+```
+# Move to download directory and download files from list of urls  
+cd docs_maaseutu_07102024
+wget -i ../filelist_maaseutu_07102024.txt
+```
+
 ## TODO list:
 
 - Replace file downloading option with save urls to list option -> can be used to download files with more reliable tools (eg. `wget -i filelist.txt`) DONE
