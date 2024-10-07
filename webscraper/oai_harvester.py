@@ -374,11 +374,15 @@ def cli_args():
                         
     parser.add_argument("-o", "--outdir",
                         type=str, metavar="<directory>",
-                        help="download files to a directory")
+                        help="download files to a directory (NOTE! use list urls instead and then download with eg. wget)")
                         
     parser.add_argument("-m", "--metadata",
                         type=str, metavar="<filepath>",
                         help="save metadata to a file")
+                 
+    parser.add_argument("-f", "--filelist",
+                        type=str, metavar="<filepath>",
+                        help="save file urls to list")
                         
     # Optional verbosity counter (eg. -v, -vv, -vvv, etc.)
     parser.add_argument(
@@ -408,6 +412,7 @@ def main():
     LANGUAGE = args.language
     OUTDIR = args.outdir
     FILEPATH = args.metadata
+    FILELIST = args.filelist
     VERBOSE = args.verbose
     
     match VERBOSE:
@@ -457,11 +462,20 @@ def main():
         else:
             metadatawriter.metadata = record.metadata
             
+        if not FILELIST:
+            pass
+        else:
+            for i in record.metadata["urls"]:
+                downloader.url = i
+            
         
     if not downloader.url:
         logging.debug("No files to download")
     else:
-        downloader.threaded_download()
+        with open(FILELIST, 'w', encoding='utf-8') as outfile:
+            outfile.writelines((str(i)+'\n' for i in downloader.url))
+        #downloader.threaded_download()
+        
         
     if metadatawriter.metadata is not None:
         metadatawriter.write_csv()
