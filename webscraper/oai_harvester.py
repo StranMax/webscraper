@@ -101,15 +101,6 @@ class Record():
         self.counter = next(self._counter)
         self.metadata = {}
         
-        #self.title = None
-        #self.abstract = None
-        #self.publication = None
-        #self.publisher = None
-        #self.key_words = []
-        #self.language = None
-        #self.published = None
-        #self.urls = []
-        
         self.xml = response.xml
         self._parse_metadata()
         
@@ -149,7 +140,6 @@ class Record():
             type = file.get("type")
             href = file.get("href")
             if type=="application/pdf":
-                    #self.urls.append(href)
                     urls.append(href)
         
         self.metadata = {**meta, "key_words": key_words, "urls": urls}
@@ -159,9 +149,9 @@ class Record():
         return f'Record({response})'
     
     def __str__(self):
-        #return f"{self.title} ({self.published}). {self.publication}, {self.publisher}"
         return self.metadata
-        
+       
+    # Search in multiple places
     def _match(self, pattern):    
         entries = [i for i in [self.metadata.get("title"), 
                                self.metadata.get("abstract"), 
@@ -186,10 +176,12 @@ class Record():
         #logging.info("Checking record: %s", self.title)
         if self._check_language(language) and self._match(pattern):
             next(self._matches)
-            logging.info("Record no. %s: %s", self.counter, self.metadata.get("title"))
+            #logging.info("Record no. %s: %s", self.counter, self.metadata.get("title"))
+            logging.info(f'[{self.counter}] {self.metadata.get("title")}')
             return True
         else:
-            logging.debug("Skip record no. %s: %s", self.counter, self.metadata.get("title"))
+            #logging.debug("Skip record no. %s: %s", self.counter, self.metadata.get("title"))
+            logging.debug(f'[{self.counter}] {self.metadata.get("title")} NO MATCH')
             return False
 
 
@@ -219,10 +211,10 @@ class Downloader():
         
     @url.setter
     def url(self, value):
-        logging.info("Appending %s to downloader", value)
+        #logging.info("Appending %s to downloader", value)
         self._urls.append(value)
         self._download_attempt += 1
-        logging.info("Downloader has %s urls", len(self._urls))
+        #logging.info("Downloader has %s urls", len(self._urls))
         if len(self._urls) == 1000:
             logging.info("Stored urls reached %s", len(self._urls))
             self.threaded_download()
@@ -230,7 +222,7 @@ class Downloader():
             
     @url.deleter
     def url(self):
-        logging.info("Deleting %s urls from downloader", str(len(self._urls)))
+        #logging.info("Deleting %s urls from downloader", str(len(self._urls)))
         self._urls.clear()
     
     def download_file(self, url):
@@ -451,11 +443,11 @@ def main():
         if not record.filter(LANGUAGE, SEARCHPATTERN):
             continue  # Skip record and continue to next loop
 
-        if not OUTDIR:
-            pass
-        else:
-            for i in record.metadata["urls"]:
-                downloader.url = i
+        #if not OUTDIR:
+        #    pass
+        #else:
+        #    for i in record.metadata["urls"]:
+        #        downloader.url = i
         
         if not FILEPATH:
             pass
@@ -483,7 +475,7 @@ def main():
         
     logging.info("Finished queries. Total of %s queries, found %s matching records and downloaded %s files", 
                  record.counter, Record._matches, downloader._download_success)
-    if downloader._download_success < downloader._download_attempt:
-        logging.warning('Download of %s files failed', 
-                        downloader._download_attempt-downloader._download_success)
+    #if downloader._download_success < downloader._download_attempt:
+    #    logging.warning('Download of %s files failed', 
+    #                    downloader._download_attempt-downloader._download_success)
                        
