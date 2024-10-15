@@ -32,6 +32,11 @@ Same for `kaupunki` search pattern:
 oai-harvest https://julkaisut.valtioneuvosto.fi/oai/request -sp "[Kk]au[-]?pun.*" -vv -m C:\Users\maxst\Desktop\MAAVALTA\metadata_kaupunki_07102024.csv -f C:\Users\maxst\Desktop\MAAVALTA\filelist_kaupunki_07102024.txt
 ```
 
+Use helper script to download with multiple search-patterns  
+```
+./valto-haku.sh -m "../../metadatafiles" -f "../../filelistfiles" -s "15102024"
+```
+
 File list obtained by `-f` option can be used to download file with wget:  
 
 ```

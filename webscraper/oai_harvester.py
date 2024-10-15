@@ -181,7 +181,7 @@ class Record():
             return True
         else:
             #logging.debug("Skip record no. %s: %s", self.counter, self.metadata.get("title"))
-            logging.debug(f'[{self.counter}] {self.metadata.get("title")} NO MATCH')
+            #logging.debug(f'[{self.counter}] {self.metadata.get("title")} NO MATCH')
             return False
 
 
@@ -215,10 +215,10 @@ class Downloader():
         self._urls.append(value)
         self._download_attempt += 1
         #logging.info("Downloader has %s urls", len(self._urls))
-        if len(self._urls) == 1000:
-            logging.info("Stored urls reached %s", len(self._urls))
-            self.threaded_download()
-            del self.url
+        #if len(self._urls) == 1000:
+        #    logging.info("Stored urls reached %s", len(self._urls))
+        #    self.threaded_download()
+        #    del self.url
             
     @url.deleter
     def url(self):
@@ -324,11 +324,14 @@ class MetadataWriter():
                 if Path(self.filepath).exists():
                     logging.warning("Overwriting old metadata file")
                 with open(self.filepath, "w", newline="", encoding='utf-8') as f:
-                    w = csv.DictWriter(f, fieldnames=self.metadata[0].keys(), 
-                                       delimiter=';')
+                    w = csv.DictWriter(f, 
+                                       #fieldnames=self.metadata[0].keys(),
+                                       fieldnames=['published', 'abstract', 'language', 
+                                                   'publication', 'publisher', 'title', 
+                                                   'key_words', 'urls', 'search_term'],
+                                       extrasaction='ignore', delimiter=';')
                     w.writeheader()
                     w.writerows(self.metadata)
-                logging.info("Writing finished")
             
         
     
@@ -462,8 +465,9 @@ def main():
             
         
     if not downloader.url:
-        logging.debug("No files to download")
+        logging.debug("No filelist written")
     else:
+        logging.info("Writing filelist to file: %s", str(FILELIST))
         with open(FILELIST, 'w', encoding='utf-8') as outfile:
             outfile.writelines((str(i)+'\n' for i in downloader.url))
         #downloader.threaded_download()
