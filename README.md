@@ -15,7 +15,7 @@ Requisites: python>=3.12
 ## Usage
 
 ```
-oai_harvest.exe --help
+oai-harvest.exe --help
 ```
 
 ## Example usage:
